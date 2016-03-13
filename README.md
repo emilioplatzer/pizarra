@@ -4,6 +4,7 @@ One big web pizarra (board)
 # Usage
 ```sh
 $ npm install pizarra
+$ npm start
 ```
 
 
