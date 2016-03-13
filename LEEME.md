@@ -8,6 +8,7 @@ One big web pizarra (board)
 [!--lang:*-->
 ```sh
 $ npm install pizarra
+$ npm start
 ```
 
 <!--multilang v0 es:LEEME.md en:README.md -->

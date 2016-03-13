@@ -1,0 +1,18 @@
+server:
+  port: 54345
+  base-url: /pizarra
+db:
+  motor: postgresql
+  host: localhost
+  database: pizarra_db
+  schema: piz
+  user: pizarra_user
+  password: pizarra_3323948812bdz
+login:
+  table: users
+  userFieldName: username
+  passFieldName: md5pass
+  infoFieldList: [username, rol]
+  plus:
+    unloggedPath: client/unlogged
+    loginPagePath: client/unlogged/login

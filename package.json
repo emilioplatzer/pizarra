@@ -5,11 +5,16 @@
   "author": "Codenautas <codenautas@googlegroups.com>",
   "license": "MIT",
   "repository": "codenautas/pizarra",
-  "main": "index.js",
+  "main": "pizarra-server.js",
   "dependencies": {
     "fs-extra": "0.26.5",
     "fs-promise": "0.5.0",
-    "best-promise": "0.2.4"
+    "read-yaml-promise": "1.0.2",
+    
+    "best-promise": "0.2.4",
+    "backend-plus": "0.0.2",
+    "extension-serve-static": "0.1.6",
+    "mini-tools": "0.2.3"
   },
   "devDependencies": {
     "expect.js": "~0.3.1",
@@ -17,13 +22,13 @@
     "mocha": "~2.4.5"
   },
   "engines": {
-    "node": ">= 0.10.0"
+    "node": ">= 0.12.0"
   },
   "scripts": {
     "test": "mocha --reporter spec --bail --check-leaks test/",
     "test-ci": "istanbul cover node_modules/mocha/bin/_mocha --report lcovonly -- --reporter spec --check-leaks test/",
     "test-cov": "istanbul cover node_modules/mocha/bin/_mocha -- --reporter dot --check-leaks test/",
-    "start": "node example/server.js"
+    "start": "node server/pizarra-server.js"
   },
   "jshintConfig": {
     "asi": false,
@@ -45,6 +50,6 @@
     "coverage": 90,
     "run-in": "server",
     "stability": "extending",
-    "type": "cmd-tool"
+    "type": "app"
   }
 }
