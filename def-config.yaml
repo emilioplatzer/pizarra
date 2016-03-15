@@ -16,3 +16,4 @@ login:
   plus:
     unloggedPath: client/unlogged
     loginPagePath: client/unlogged/login
+    successRedirect: /

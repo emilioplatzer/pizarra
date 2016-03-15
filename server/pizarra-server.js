@@ -10,6 +10,7 @@ var extensionServeStatic = require('extension-serve-static');
 // var Promises = require('best-promise');
 
 var backend = require("backend-plus");
+var MiniTools = require("mini-tools");
 
 class AppPizarra extends backend.AppBackend{
     configList(){
@@ -22,6 +23,7 @@ class AppPizarra extends backend.AppBackend{
         super.addLoggedServices();
         var be = this;
         be.app.use('/',extensionServeStatic(this.rootPath+'client',{staticExtensions:['jpg','png','html','gif']}));
+        be.app.get('/',MiniTools.serveJade(this.rootPath+'client/pizarra'));
     }
 }
 

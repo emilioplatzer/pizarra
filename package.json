@@ -2,17 +2,19 @@
   "name": "pizarra",
   "description": "One big web pizarra (board)",
   "version": "0.0.1",
-  "author": "Codenautas <codenautas@googlegroups.com>",
+  "author": "Emilio Platzer <emilioplatzer@googlegroups.com>",
   "license": "MIT",
-  "repository": "codenautas/pizarra",
+  "repository": "emilioplatzer/pizarra",
   "main": "server/pizarra-server.js",
   "dependencies": {
-    "fs-extra": "0.26.5",
+    "fs-extra": "0.26.6",
     "fs-promise": "0.5.0",
+    "jade": "~1.11.0",
     "read-yaml-promise": "1.0.2",
-    
+    "stylus": "~0.54.2",
+
+    "backend-plus": "0.0.4",
     "best-promise": "0.2.4",
-    "backend-plus": "0.0.2",
     "extension-serve-static": "0.1.6",
     "mini-tools": "0.2.3"
   },
@@ -50,7 +52,7 @@
     }
   },
   "qa-control": {
-    "package-version": "0.2.0",
+    "package-version": "0.1.4",
     "coverage": 90,
     "run-in": "server",
     "stability": "extending",

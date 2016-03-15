@@ -1,2 +1,0 @@
-
-enc: idEncuesta, "for": "TRAC"
