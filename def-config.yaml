@@ -1,5 +1,5 @@
 server:
-  port: 54345
+  port: 52749
   base-url: /pizarra
 db:
   motor: postgresql
