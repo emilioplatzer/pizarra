@@ -14,4 +14,4 @@ window.addEventListener('load', function(){
 
 window.addEventListener('resize', resizeNow);
 
-central.addEventListener('click', pizarra.doClick);
+central.addEventListener('click', pizarra.doClick.bind(null,pizarra));
