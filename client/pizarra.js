@@ -17,6 +17,8 @@ window.addEventListener('resize', resizeNow);
 ///////////////////////////////////////////////////////////////////////////////
 // Con Gina 9/4/2016
 
+var colorBordeNormal = '1px solid #9E9';
+
 central.addEventListener('click', function(event){
     var rectangulito = document.createElement('div');
     rectangulito.contentEditable=true;
@@ -29,6 +31,7 @@ central.addEventListener('click', function(event){
     rectangulito.style.left=event.pageX+'px';
     rectangulito.style.fontSize='300%';
     rectangulito.style.textAlign='center';
+    rectangulito.style.border=colorBordeNormal;
     central.appendChild(rectangulito);
     rectangulito.focus();
     rectangulito.addEventListener('dblclick', function(event){
@@ -41,13 +44,24 @@ central.addEventListener('click', function(event){
     });
     rectangulito.addEventListener('blur', function(event){
         this.contentEditable=false;
-        rectangulito.style.border='';
+        this.style.border=colorBordeNormal;
     });
     rectangulito.addEventListener('mousedown', function(event){
-        rectangulito.style.border='1px dotted red';
+        this.style.border='1px dotted red';
+        this.teEstasMoviendo=true;
+        var posicion = this.getBoundingClientRect();
+        this.lugarAgarreX = event.pageX - posicion.left;
+        this.lugarAgarreY = event.pageY - posicion.top;
     });
     rectangulito.addEventListener('mouseup', function(event){
-        rectangulito.style.border='';
+        this.teEstasMoviendo=false;
+        this.style.border=colorBordeNormal;
+    });
+    rectangulito.addEventListener('mousemove', function(event){
+        if(this.teEstasMoviendo){
+            this.style.top  = event.pageY - this.lugarAgarreY +'px';
+            this.style.left = event.pageX - this.lugarAgarreX +'px';
+        }
     });
 },false);
 
