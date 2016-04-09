@@ -14,4 +14,19 @@ window.addEventListener('load', function(){
 
 window.addEventListener('resize', resizeNow);
 
-central.addEventListener('click', pizarra.doClick.bind(null,pizarra));
+///////////////////////////////////////////////////////////////////////////////
+// Con Gina 9/4/2016
+
+document.addEventListener('click', function(event){
+    var rectangulito = document.createElement('div');
+    rectangulito.style.height='50px';
+    rectangulito.style.width='50px';
+    rectangulito.style.backgroundColor='#AFA';
+    rectangulito.style.position='absolute';
+    rectangulito.style.top=event.pageY+'px';
+    rectangulito.style.left=event.pageX+'px';
+    central.appendChild(rectangulito);
+});
+
+
+

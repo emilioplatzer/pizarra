@@ -7,16 +7,16 @@
   "repository": "emilioplatzer/pizarra",
   "main": "server/pizarra-server.js",
   "dependencies": {
-    "fs-extra": "0.26.6",
+    "fs-extra": "0.26.7",
     "fs-promise": "0.5.0",
     "jade": "~1.11.0",
     "read-yaml-promise": "1.0.2",
     "stylus": "~0.54.2",
 
-    "backend-plus": "0.0.4",
+    "backend-plus": "0.0.9",
     "best-promise": "0.2.4",
     "extension-serve-static": "0.1.6",
-    "mini-tools": "0.2.3"
+    "mini-tools": "0.2.7"
   },
   "devDependencies": {
     "expect.js": "~0.3.1",
