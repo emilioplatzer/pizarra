@@ -52,10 +52,12 @@ central.addEventListener('click', function(event){
         var posicion = this.getBoundingClientRect();
         this.lugarAgarreX = event.pageX - posicion.left;
         this.lugarAgarreY = event.pageY - posicion.top;
+        tacho.style.visibility='visible';
     });
     rectangulito.addEventListener('mouseup', function(event){
         this.teEstasMoviendo=false;
         this.style.border=colorBordeNormal;
+        tacho.style.visibility='hidden';
     });
     rectangulito.addEventListener('mousemove', function(event){
         if(this.teEstasMoviendo){
@@ -65,5 +67,20 @@ central.addEventListener('click', function(event){
     });
 },false);
 
+window.addEventListener('load', function(){
+    var tacho = document.createElement('img');
+    tacho.src='128px-Trash_Can.svg.png';
+    tacho.style.height='64px';
+    tacho.style.width='64px';
+    tacho.style.position='absolute'; 
+    tacho.id='tacho';
+    central.appendChild(tacho);
+    tacho.style.top=window.innerHeight - tacho.clientHeight + 'px';
+    tacho.style.left=window.innerWidth - tacho.clientWidth + 'px';
+    tacho.style.visibility='hidden';
+});
 
-
+window.addEventListener('resize', function(){
+    tacho.style.top=window.innerHeight - tacho.clientHeight + 'px';
+    tacho.style.left=window.innerWidth - tacho.clientWidth + 'px';
+});
