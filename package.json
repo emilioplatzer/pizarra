@@ -10,6 +10,7 @@
     "fs-extra": "0.26.7",
     "fs-promise": "0.5.0",
     "jade": "~1.11.0",
+    "pug": "2.0.0-beta3",
     "read-yaml-promise": "1.0.2",
     "stylus": "~0.54.2",
 
