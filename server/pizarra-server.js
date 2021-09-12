@@ -3,28 +3,40 @@
 /*jshint node:true */
 /*eslint-disable no-console */
 
+var PORT = 54321
+
 // APP
+var express = require('express')
 
-var extensionServeStatic = require('extension-serve-static');
+var serveContent = require('serve-content');
 
-// var Promises = require('best-promise');
-
-var backend = require("backend-plus");
 var MiniTools = require("mini-tools");
 
-class AppPizarra extends backend.AppBackend{
-    configList(){
-        return super.configList().concat([
-            'def-config.yaml',
-            'local-config.yaml'
-        ]);
+/**
+ * 
+ * @param {express.Application} app 
+ */
+
+async function pizarra(app){
+    /*
+    var config = await MiniTools.readConfig([
+        'def-config.yaml',
+        'local-config.yaml'
+    ]);
+    */
+    var opts={
+        rootPath: './'
     }
-    addLoggedServices(){
-        super.addLoggedServices();
-        var be = this;
-        be.app.use('/',extensionServeStatic(this.rootPath+'client',{staticExtensions:['jpg','png','html','gif']}));
-        be.app.get('/',MiniTools.serveJade(this.rootPath+'client/pizarra'));
-    }
+    app.use('/',serveContent(opts.rootPath+'client',{allowedExts:['jpg','png','html','gif','css','js']}));
+    app.get('/',MiniTools.serveJade(opts.rootPath+'client/pizarra'));
 }
 
-new AppPizarra().start();
+async function run(){
+    var app = express();
+    await pizarra(app);
+    app.listen(PORT, function(){
+        console.log(`listening ${PORT} port`)
+    })
+}
+
+run();

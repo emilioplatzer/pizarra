@@ -5,15 +5,16 @@ db:
   motor: postgresql
   host: localhost
   database: pizarra_db
+  port: 54313
   schema: piz
   user: pizarra_user
-  password: pizarra_3323948812bdz
 login:
   table: users
   userFieldName: username
   passFieldName: md5pass
   infoFieldList: [username, rol]
+  rolFieldName: rol
   plus:
     unloggedPath: client/unlogged
-    loginPagePath: client/unlogged/login
+    loginPagePath: client/unlogged
     successRedirect: /
