@@ -12,6 +12,8 @@
     "pug": "^3.0.2",
     "read-yaml-promise": "^1.0.2",
     "stylus": "~0.55.0",
+    "ws": "^8.2.2",
+    "like-ar": "^0.3.5",
     "serve-content": "^0.3.14",
     "mini-tools": "^1.11.1"
   },
