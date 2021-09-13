@@ -45,6 +45,7 @@ async function pizarra({server, app}){
     wsServer.on('connection', socket => {
         socketId++
         socket.on('message', message => {
+            var data = JSON.parse(message);
             console.log(data);
             likeAr(data.cambios).forEach((v,k)=>{
                 objects[k] = v;

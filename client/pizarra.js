@@ -27,17 +27,39 @@ var objects={
 
 central.addEventListener('click', function(event){
     var objectId = new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
-    var objectData = {}
+    var objectData = {
+        top:event.pageY+'px',
+        left:event.pageX+'px',
+        text:''
+    }
+    crearRectangulito(objectId, objectData)
+},false);
+
+/**
+ * 
+ * @param {any} objectData 
+ * @param {HTMLDivElement} rectangulito 
+ */
+function refrescarRectangulito(objectData, rectangulito){
+    rectangulito.style.top=objectData.top;
+    rectangulito.style.left=objectData.left;
+    rectangulito.text = objectData.text;
+    Object.defineProperty(rectangulito, 'rectangulito',{
+        value: objectData,
+        enumerable: false,
+    });
+}
+
+function crearRectangulito(objectId, objectData){
     objects[objectId] = objectData;
     var rectangulito = document.createElement('div');
     rectangulito.contentEditable=true;
+    refrescarRectangulito(objectData, rectangulito);
     rectangulito.style.border='1px dashed black';
     rectangulito.style.minheight='50px';
     rectangulito.style.minWidth='50px';
     rectangulito.style.backgroundColor='#AFA';
     rectangulito.style.position='absolute';
-    rectangulito.style.top=event.pageY+'px';
-    rectangulito.style.left=event.pageX+'px';
     rectangulito.style.fontSize='300%';
     rectangulito.style.textAlign='center';
     rectangulito.style.border=colorBordeNormal;
@@ -100,7 +122,8 @@ central.addEventListener('click', function(event){
             this.style.left = event.pageX - this.lugarAgarreX +'px';
         }
     });
-},false);
+}
+
 
 window.addEventListener('load', function(){
     var tacho = document.createElement('img');
@@ -123,3 +146,31 @@ window.addEventListener('resize', function(){
 var url = new URL('/ws', location)
 url.protocol = url.protocol.replace('http','ws');
 var webSokect = new WebSocket(url.toString())
+
+function flashRectangulito(rectangulito){
+    var background=rectangulito.style.backgroundColor;
+    rectangulito.style.backgroundColor='#FF8';
+    setTimeout(()=>{
+        rectangulito.style.backgroundColor=background;
+    },1000)
+}
+
+webSokect.onmessage = ev=>{
+    var data = JSON.parse(ev.data);
+    // webSokect.on('message', message=>{
+    //    var data = JSON.parse(ev.data);
+    //    var data = JSON.parse(message);
+    for(var key in data){
+        var objectData = data[key];
+        if(!objects[key]){
+            crearRectangulito(key, objectData)
+        }else{
+            if(JSON.stringify(objectData) != JSON.stringify(objects[key])){
+                var rectangulito = objects[key].rectangulito
+                refrescarRectangulito(objectData, rectangulito);
+                flashRectangulito(rectangulito)
+                objects[key] = objectData;
+            }
+        }
+    }
+}
