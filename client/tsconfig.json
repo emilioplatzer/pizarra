@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "checkJs": true,
+        "lib": ["DOM", "ES2017"],
+        "typeRoots": ["../unlogged", "../node_modules/@types"],
+    }
+}

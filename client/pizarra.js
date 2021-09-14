@@ -2,10 +2,18 @@ function Pizarra(){
 }
 
 /**
- * @typedef {{x:number, y:number, top:string, left:string, text:string}} ObjectData
+ * @typedef {{x:number, y:number, top:number, left:number}} Posicion
+ */
+
+/**
+ * @typedef {{text:string, posicion:Posicion}} ObjectData
  */
 
 var pizarra = new Pizarra();
+
+/** @var {HTMLDivElement} lateral */
+/** @var {HTMLDivElement} central */
+
 
 function resizeNow(){
     lateral.style.height = window.innerHeight - superior.clientHeight -2 + 'px';
@@ -48,8 +56,8 @@ central.addEventListener('click', function(event){
  * @param {HTMLDivElement} rectangulito 
  */
 function refrescarRectangulito(objectData, rectangulito){
-    rectangulito.style.top=objectData.top;
-    rectangulito.style.left=objectData.left;
+    rectangulito.style.top=objectData.posicion.top+'px';
+    rectangulito.style.left=objectData.posicion.left+'px';
     rectangulito.textContent = objectData.text;
     Object.defineProperty(objectData, 'rectangulito',{
         value: rectangulito, 
@@ -59,10 +67,11 @@ function refrescarRectangulito(objectData, rectangulito){
 
 function crearRectangulito(objectId, objectData){
     objects[objectId] = objectData;
+    /** @type {Rectangulito} */ // @ts-ignore
     var rectangulito = document.createElement('div');
     refrescarRectangulito(objectData, rectangulito);
     rectangulito.style.border='1px dashed black';
-    rectangulito.style.minheight='50px';
+    rectangulito.style.minHeight='50px';
     rectangulito.style.minWidth='50px';
     rectangulito.style.backgroundColor='#AFA';
     rectangulito.style.position='absolute';
@@ -79,7 +88,7 @@ function crearRectangulito(objectId, objectData){
         webSokect?.send(JSON.stringify({cambios:{[objectId]:objectData}}));
     }
     rectangulito.addEventListener('dblclick', function(event){
-        this.contentEditable=true;
+        this.contentEditable='true';
         rectangulito.style.border='1px dashed black';
         event.stopPropagation();
     });
@@ -95,7 +104,7 @@ function crearRectangulito(objectId, objectData){
     });
     */
     rectangulito.addEventListener('blur', function(event){
-        this.contentEditable=false;
+        this.contentEditable='false';
         this.style.border=colorBordeNormal;
         objectData.text = this.innerText;
         if(this.innerText.trim()==''){
@@ -103,9 +112,7 @@ function crearRectangulito(objectId, objectData){
             delete objects[objectId];
             rectangulito.parentNode.removeChild(rectangulito);
         }else{
-            setImmediate(function(){
-                this.synchronizeInWebSocket();
-            })
+            this.synchronizeInWebSocket();
         }
         this.style.cursor="move";
     });
@@ -134,7 +141,7 @@ function crearRectangulito(objectId, objectData){
     */
     rectangulito.addEventListener('dragstart',function(event){
         tacho.style.visibility='visible';
-        tacho.style.zIndex = zIndex+1;
+        tacho.style.zIndex = (zIndex+1).toString();
         event.dataTransfer.dropEffect = "move";
         var posicion = this.getBoundingClientRect();
         this.lugarAgarreX = event.pageX - posicion.left;
