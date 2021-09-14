@@ -1,6 +1,10 @@
 function Pizarra(){
 }
 
+/**
+ * @typedef {{x:number, y:number, top:string, left:string, text:string}} ObjectData
+ */
+
 var pizarra = new Pizarra();
 
 function resizeNow(){
@@ -40,7 +44,7 @@ central.addEventListener('click', function(event){
 
 /**
  * 
- * @param {any} objectData 
+ * @param {ObjectData} objectData 
  * @param {HTMLDivElement} rectangulito 
  */
 function refrescarRectangulito(objectData, rectangulito){
@@ -67,6 +71,7 @@ function crearRectangulito(objectId, objectData){
     rectangulito.style.border=colorBordeNormal;
     rectangulito.style.userSelect='none';
     rectangulito.style.padding='4px';
+    rectangulito.draggable=true;
     central.appendChild(rectangulito);
     rectangulito.synchronizeInWebSocket=function(){
         var posicion = this.getBoundingClientRect();
@@ -84,9 +89,11 @@ function crearRectangulito(objectId, objectData){
             event.stopPropagation();
         }
     });
+    /*
     rectangulito.addEventListener('click', function(event){
         event.stopPropagation();
     });
+    */
     rectangulito.addEventListener('blur', function(event){
         this.contentEditable=false;
         this.style.border=colorBordeNormal;
@@ -96,18 +103,19 @@ function crearRectangulito(objectId, objectData){
             delete objects[objectId];
             rectangulito.parentNode.removeChild(rectangulito);
         }else{
-            this.synchronizeInWebSocket();
+            setImmediate(function(){
+                this.synchronizeInWebSocket();
+            })
         }
         this.style.cursor="move";
     });
+    /*
     rectangulito.addEventListener('mousedown', function(event){
         if(this.contentEditable) return;
         zIndex++;
         this.style.zIndex = zIndex;
         this.style.border='1px dotted red';
         this.teEstasMoviendo=true;
-        this.lugarAgarreX = event.pageX - posicion.left;
-        this.lugarAgarreY = event.pageY - posicion.top;
         tacho.style.visibility='visible';
     });
     rectangulito.addEventListener('mouseup', function(event){
@@ -123,8 +131,31 @@ function crearRectangulito(objectId, objectData){
             this.style.left = event.pageX - this.lugarAgarreX +'px';
         }
     });
+    */
+    rectangulito.addEventListener('dragstart',function(event){
+        tacho.style.visibility='visible';
+        tacho.style.zIndex = zIndex+1;
+        event.dataTransfer.dropEffect = "move";
+        var posicion = this.getBoundingClientRect();
+        this.lugarAgarreX = event.pageX - posicion.left;
+        this.lugarAgarreY = event.pageY - posicion.top;
+    })
+    rectangulito.addEventListener('dragend',function(event){
+        this.style.border=colorBordeNormal;
+        this.style.top  = event.pageY - this.lugarAgarreY +'px';
+        this.style.left = event.pageX - this.lugarAgarreX +'px';
+        this.synchronizeInWebSocket();
+    });
 }
 
+central.addEventListener('dragover', function(event){
+    event.dataTransfer.dropEffect = "move";
+    event.preventDefault();
+})
+
+central.addEventListener('drop', function(event){
+    tacho.style.visibility='hidden';
+})
 
 window.addEventListener('load', function(){
     var tacho = document.createElement('img');
