@@ -33,6 +33,9 @@ central.addEventListener('click', function(event){
         text:''
     }
     crearRectangulito(objectId, objectData)
+    var rectangulito = objectData.rectangulito;
+    rectangulito.contentEditable=true;
+    rectangulito.focus();
 },false);
 
 /**
@@ -43,9 +46,9 @@ central.addEventListener('click', function(event){
 function refrescarRectangulito(objectData, rectangulito){
     rectangulito.style.top=objectData.top;
     rectangulito.style.left=objectData.left;
-    rectangulito.text = objectData.text;
-    Object.defineProperty(rectangulito, 'rectangulito',{
-        value: objectData,
+    rectangulito.textContent = objectData.text;
+    Object.defineProperty(objectData, 'rectangulito',{
+        value: rectangulito, 
         enumerable: false,
     });
 }
@@ -53,7 +56,6 @@ function refrescarRectangulito(objectData, rectangulito){
 function crearRectangulito(objectId, objectData){
     objects[objectId] = objectData;
     var rectangulito = document.createElement('div');
-    rectangulito.contentEditable=true;
     refrescarRectangulito(objectData, rectangulito);
     rectangulito.style.border='1px dashed black';
     rectangulito.style.minheight='50px';
@@ -66,11 +68,10 @@ function crearRectangulito(objectId, objectData){
     rectangulito.style.userSelect='none';
     rectangulito.style.padding='4px';
     central.appendChild(rectangulito);
-    rectangulito.focus();
     rectangulito.synchronizeInWebSocket=function(){
         var posicion = this.getBoundingClientRect();
         objectData.posicion = posicion;
-        webSokect?.send(JSON.stringify({[objectId]:objectData}));
+        webSokect?.send(JSON.stringify({cambios:{[objectId]:objectData}}));
     }
     rectangulito.addEventListener('dblclick', function(event){
         this.contentEditable=true;
@@ -91,7 +92,7 @@ function crearRectangulito(objectId, objectData){
         this.style.border=colorBordeNormal;
         objectData.text = this.innerText;
         if(this.innerText.trim()==''){
-            webSokect?.send(JSON.stringify({[objectId]:null}));
+            webSokect?.send(JSON.stringify({cambios:{[objectId]:null}}));
             delete objects[objectId];
             rectangulito.parentNode.removeChild(rectangulito);
         }else{
@@ -163,10 +164,15 @@ webSokect.onmessage = ev=>{
     for(var key in data){
         var objectData = data[key];
         if(!objects[key]){
-            crearRectangulito(key, objectData)
+            if(objectData){
+                crearRectangulito(key, objectData)
+            }
         }else{
+            var rectangulito = objects[key].rectangulito
+            if(!objectData){
+                rectangulito.parentNode.removeChild(rectangulito);
+            }
             if(JSON.stringify(objectData) != JSON.stringify(objects[key])){
-                var rectangulito = objects[key].rectangulito
                 refrescarRectangulito(objectData, rectangulito);
                 flashRectangulito(rectangulito)
                 objects[key] = objectData;

@@ -42,23 +42,31 @@ async function pizarra({server, app}){
     var allSockets={
 
     }
+    function sendAll(){
+        likeAr(allSockets).forEach((s,id)=>{
+            console.log('sendAll',id)
+            s.send(JSON.stringify(objects))
+        })
+        console.log(objects)
+        console.log('........')
+    }
     wsServer.on('connection', socket => {
         socketId++
         socket.on('message', message => {
             var data = JSON.parse(message);
             console.log(data);
             likeAr(data.cambios).forEach((v,k)=>{
+                console.log('actualizando',k,v)
                 objects[k] = v;
             })
-            likeAr(allSockets).forEach(s=>{
-                s.send(JSON.stringify(objects))
-            })
+            sendAll();
         });
         socket.on('close',_=>{
             console.log('delete',socketId)
             delete allSockets[socketId];
         })
         allSockets[socketId]=socket;
+        sendAll();
     });
     /*
     server.on('upgrade', (request, socket, head) => {
