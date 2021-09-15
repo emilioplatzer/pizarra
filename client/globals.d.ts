@@ -14,9 +14,10 @@ declare interface ObjectData {
 declare type ObjectId = '111111.11111'|'111112.222222'|'etc...';
 
 declare interface HTMLDivElement{
-    synchronizeInWebSocket:()=>void
+    synchronizeInWebSocket:(opts?:{skippeable:boolean})=>void
     lugarAgarreX:number
     lugarAgarreY:number
+    movingWithTheMouse:boolean
 }
 declare var superior: HTMLDivElement
 declare var central: HTMLDivElement

@@ -23,24 +23,9 @@ var objects={
 
 }
 
-central.addEventListener('click', function(event){
-    /** @type {ObjectId} */ // @ts-ignore // ok, acá se crean con algún formato compatible
-    var objectId = new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
-    /** @type {ObjectData} */
-    var objectData = {
-        // @ts-ignore // faltan campos, ok
-        posicion:{
-            top:event.pageY,
-            left:event.pageX,
-        },
-        backgroundColor:'#AFA',
-        text:''
-    }
-    crearRectangulito(objectId, objectData)
-    var rectangulito = objectData.rectangulito;
-    rectangulito.contentEditable='true';
-    rectangulito.focus();
-},false);
+central.addEventListener('mousedown', function(event){
+    if(event.target == this) grabbeds = [];
+});
 
 /**
  * 
@@ -58,6 +43,9 @@ function refrescarRectangulito(objectData, rectangulito){
     });
 }
 
+/** @type {Set<HTMLDivElement>} */
+var grabbeds = new Set()
+
 /**
  * 
  * @param {ObjectId} objectId 
@@ -70,12 +58,13 @@ function crearRectangulito(objectId, objectData){
     var rectangulito = document.createElement('div');
     refrescarRectangulito(objectData, rectangulito);
     rectangulito.className='rectangulito';
-    rectangulito.draggable=true;
     central.appendChild(rectangulito);
-    rectangulito.synchronizeInWebSocket=function(){
-        var posicion = this.getBoundingClientRect();
-        objectData.posicion = posicion;
-        webSokect?.send(JSON.stringify({cambios:{[objectId]:objectData}}));
+    rectangulito.synchronizeInWebSocket=function(opts){
+        if(!opts?.skippeable){
+            var posicion = this.getBoundingClientRect();
+            objectData.posicion = posicion;
+            webSokect?.send(JSON.stringify({cambios:{[objectId]:objectData}}));
+        }
     }
     rectangulito.addEventListener('dblclick', function(event){
         this.contentEditable='true';
@@ -104,55 +93,68 @@ function crearRectangulito(objectId, objectData){
         }else{
             this.synchronizeInWebSocket();
         }
-        this.style.cursor="move";
     });
-    /*
     rectangulito.addEventListener('mousedown', function(event){
-        if(this.contentEditable) return;
+        if(this.contentEditable=="true") return;
         zIndex++;
-        this.style.zIndex = zIndex;
-        this.style.border='1px dotted red';
-        this.teEstasMoviendo=true;
+        this.style.cursor = "move";
+        grabbeds.add(this)
+        grabbeds.forEach(element=>{
+            var posicion = element.getBoundingClientRect();
+            element.lugarAgarreX = event.pageX - posicion.left;
+            element.lugarAgarreY = event.pageY - posicion.top;
+            element.style.border='1px dotted red';
+            element.style.zIndex = zIndex.toString();
+            element.movingWithTheMouse=true;
+        })
         tacho.style.visibility='visible';
+        tacho.style.zIndex = zIndex.toString();
     });
-    rectangulito.addEventListener('mouseup', function(event){
-        if(this.contentEditable) return;
-        this.teEstasMoviendo=false;
-        this.style.border=colorBordeNormal;
+    document.addEventListener('mouseup', function(event){
+        var release = !event.ctrlKey;
+        var hasGrabbeds = false;
+        grabbeds.forEach(element=>{
+            hasGrabbeds = true;
+            element.synchronizeInWebSocket();
+            if(release){
+                element.style.cursor="";
+                element.movingWithTheMouse=false;
+                element.style.border=colorBordeNormal;
+            }
+        });
+        if(release){
+            grabbeds = new Set();
+        }
         tacho.style.visibility='hidden';
-        this.synchronizeInWebSocket();
-    });
-    rectangulito.addEventListener('mousemove', function(event){
-        if(this.teEstasMoviendo){
-            this.style.top  = event.pageY - this.lugarAgarreY +'px';
-            this.style.left = event.pageX - this.lugarAgarreX +'px';
+        if(!hasGrabbeds && event.target == central){
+            /** @type {ObjectId} */ // @ts-ignore // ok, acá se crean con algún formato compatible
+            var objectId = new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
+            /** @type {ObjectData} */
+            var objectData = {
+                // @ts-ignore // faltan campos, ok
+                posicion:{
+                    top:event.pageY,
+                    left:event.pageX,
+                },
+                backgroundColor:'#AFA',
+                text:''
+            }
+            crearRectangulito(objectId, objectData)
+            var rectangulito = objectData.rectangulito;
+            rectangulito.contentEditable='true';
+            rectangulito.focus();
         }
     });
-    */
-    rectangulito.addEventListener('dragstart',function(event){
-        tacho.style.visibility='visible';
-        tacho.style.zIndex = (zIndex+1).toString();
-        if(event.dataTransfer) event.dataTransfer.dropEffect = "move";
-        var posicion = this.getBoundingClientRect();
-        this.lugarAgarreX = event.pageX - posicion.left;
-        this.lugarAgarreY = event.pageY - posicion.top;
-    })
-    rectangulito.addEventListener('dragend',function(event){
-        this.style.border=colorBordeNormal;
-        this.style.top  = event.pageY - this.lugarAgarreY +'px';
-        this.style.left = event.pageX - this.lugarAgarreX +'px';
-        this.synchronizeInWebSocket();
+    document.addEventListener('mousemove', function(event){
+        if( (event.buttons & 1) === 1 ){
+            grabbeds.forEach(element=>{
+                element.style.top  = event.pageY - element.lugarAgarreY +'px';
+                element.style.left = event.pageX - element.lugarAgarreX +'px';
+                element.synchronizeInWebSocket({skippeable:true});
+            });
+        }
     });
 }
-
-central.addEventListener('dragover', function(event){
-    if(event.dataTransfer) event.dataTransfer.dropEffect = "move";
-    event.preventDefault();
-})
-
-central.addEventListener('drop', function(event){
-    tacho.style.visibility='hidden';
-})
 
 window.addEventListener('load', function(){
     var tacho = document.createElement('img');
