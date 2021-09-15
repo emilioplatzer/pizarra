@@ -1,18 +1,3 @@
-function Pizarra(){
-}
-
-/**
- * @typedef {{x:number, y:number, top:number, left:number}} Posicion
- */
-
-/**
- * @typedef {{text:string, posicion:Posicion}} ObjectData
- */
-
-var pizarra = new Pizarra();
-
-/** @var {HTMLDivElement} lateral */
-/** @var {HTMLDivElement} central */
 
 
 function resizeNow(){
@@ -33,20 +18,27 @@ var colorBordeNormal = '1px solid #9E9';
 
 var zIndex = 0;
 
+/** @type {{[k in ObjectId]?:ObjectData}} */
 var objects={
 
 }
 
 central.addEventListener('click', function(event){
+    /** @type {ObjectId} */ // @ts-ignore // ok, acá se crean con algún formato compatible
     var objectId = new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
+    /** @type {ObjectData} */
     var objectData = {
-        top:event.pageY+'px',
-        left:event.pageX+'px',
+        // @ts-ignore // faltan campos, ok
+        posicion:{
+            top:event.pageY,
+            left:event.pageX,
+        },
+        backgroundColor:'#AFA',
         text:''
     }
     crearRectangulito(objectId, objectData)
     var rectangulito = objectData.rectangulito;
-    rectangulito.contentEditable=true;
+    rectangulito.contentEditable='true';
     rectangulito.focus();
 },false);
 
@@ -58,6 +50,7 @@ central.addEventListener('click', function(event){
 function refrescarRectangulito(objectData, rectangulito){
     rectangulito.style.top=objectData.posicion.top+'px';
     rectangulito.style.left=objectData.posicion.left+'px';
+    rectangulito.style.backgroundColor=objectData.backgroundColor;
     rectangulito.textContent = objectData.text;
     Object.defineProperty(objectData, 'rectangulito',{
         value: rectangulito, 
@@ -65,21 +58,18 @@ function refrescarRectangulito(objectData, rectangulito){
     });
 }
 
+/**
+ * 
+ * @param {ObjectId} objectId 
+ * @param {ObjectData} objectData 
+ */
+
 function crearRectangulito(objectId, objectData){
     objects[objectId] = objectData;
     /** @type {Rectangulito} */ // @ts-ignore
     var rectangulito = document.createElement('div');
     refrescarRectangulito(objectData, rectangulito);
-    rectangulito.style.border='1px dashed black';
-    rectangulito.style.minHeight='50px';
-    rectangulito.style.minWidth='50px';
-    rectangulito.style.backgroundColor='#AFA';
-    rectangulito.style.position='absolute';
-    rectangulito.style.fontSize='300%';
-    rectangulito.style.textAlign='center';
-    rectangulito.style.border=colorBordeNormal;
-    rectangulito.style.userSelect='none';
-    rectangulito.style.padding='4px';
+    rectangulito.className='rectangulito';
     rectangulito.draggable=true;
     central.appendChild(rectangulito);
     rectangulito.synchronizeInWebSocket=function(){
@@ -110,7 +100,7 @@ function crearRectangulito(objectId, objectData){
         if(this.innerText.trim()==''){
             webSokect?.send(JSON.stringify({cambios:{[objectId]:null}}));
             delete objects[objectId];
-            rectangulito.parentNode.removeChild(rectangulito);
+            rectangulito.parentNode?.removeChild(rectangulito);
         }else{
             this.synchronizeInWebSocket();
         }
@@ -142,7 +132,7 @@ function crearRectangulito(objectId, objectData){
     rectangulito.addEventListener('dragstart',function(event){
         tacho.style.visibility='visible';
         tacho.style.zIndex = (zIndex+1).toString();
-        event.dataTransfer.dropEffect = "move";
+        if(event.dataTransfer) event.dataTransfer.dropEffect = "move";
         var posicion = this.getBoundingClientRect();
         this.lugarAgarreX = event.pageX - posicion.left;
         this.lugarAgarreY = event.pageY - posicion.top;
@@ -156,7 +146,7 @@ function crearRectangulito(objectId, objectData){
 }
 
 central.addEventListener('dragover', function(event){
-    event.dataTransfer.dropEffect = "move";
+    if(event.dataTransfer) event.dataTransfer.dropEffect = "move";
     event.preventDefault();
 })
 
@@ -182,38 +172,53 @@ window.addEventListener('resize', function(){
     tacho.style.left=window.innerWidth - tacho.clientWidth + 'px';
 });
 
+// @ts-ignore REVISAR!!!
 var url = new URL('/ws', location)
 url.protocol = url.protocol.replace('http','ws');
 var webSokect = new WebSocket(url.toString())
 
-function flashRectangulito(rectangulito){
-    var background=rectangulito.style.backgroundColor;
+/**
+ * @param {Rectangulito} rectangulito
+ * @param {ObjectData} objectData
+ */
+
+function flashRectangulito(rectangulito, objectData){
     rectangulito.style.backgroundColor='#FF8';
+    rectangulito.setAttribute('suave','si')
+    rectangulito.style.backgroundColor=objectData.backgroundColor;
     setTimeout(()=>{
-        rectangulito.style.backgroundColor=background;
+        rectangulito.removeAttribute('suave');
     },1000)
 }
 
-webSokect.onmessage = ev=>{
+webSokect.onmessage = 
+/**
+ * @param {MessageEvent<any>} ev 
+ */
+ev=>{
     var data = JSON.parse(ev.data);
     // webSokect.on('message', message=>{
     //    var data = JSON.parse(ev.data);
     //    var data = JSON.parse(message);
     for(var key in data){
-        var objectData = data[key];
-        if(!objects[key]){
+        /** @type {ObjectId} */ // @ts-ignore por ahora no sabe el tipo de for
+        var objectId = key;
+        var objectData = data[objectId];
+        /** @type {ObjectData|undefined} */
+        var actualData = objects[objectId]
+        if(actualData == null){
             if(objectData){
-                crearRectangulito(key, objectData)
+                crearRectangulito(objectId, objectData)
             }
         }else{
-            var rectangulito = objects[key].rectangulito
+            var rectangulito = actualData.rectangulito
             if(!objectData){
-                rectangulito.parentNode.removeChild(rectangulito);
+                rectangulito.parentNode?.removeChild(rectangulito);
             }
-            if(JSON.stringify(objectData) != JSON.stringify(objects[key])){
+            if(JSON.stringify(objectData) != JSON.stringify(actualData)){
+                flashRectangulito(rectangulito, objectData)
                 refrescarRectangulito(objectData, rectangulito);
-                flashRectangulito(rectangulito)
-                objects[key] = objectData;
+                objects[objectId] = objectData;
             }
         }
     }

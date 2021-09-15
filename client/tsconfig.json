@@ -1,5 +1,7 @@
 {
     "compilerOptions": {
+        "strict": true,
+        "noImplicitAny": true,
         "checkJs": true,
         "lib": ["DOM", "ES2017"],
         "typeRoots": ["../unlogged", "../node_modules/@types"],
