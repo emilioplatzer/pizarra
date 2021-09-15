@@ -1,4 +1,4 @@
-
+const DELTA_TIME_SEND = 200;
 
 function resizeNow(){
     lateral.style.height = window.innerHeight - superior.clientHeight -2 + 'px';
@@ -24,7 +24,7 @@ var objects={
 }
 
 central.addEventListener('mousedown', function(event){
-    if(event.target == this) grabbeds = [];
+    if(event.target == this) releaseGrabbeds()
 });
 
 /**
@@ -45,6 +45,24 @@ function refrescarRectangulito(objectData, rectangulito){
 
 /** @type {Set<HTMLDivElement>} */
 var grabbeds = new Set()
+function releaseGrabbeds(){
+    grabbeds.forEach(element=>{
+        element.setAttribute('suave','si')
+        element.style.cursor="";
+        element.movingWithTheMouse=false;
+        element.style.border=colorBordeNormal;
+    });
+    grabbeds = new Set();
+}
+
+var now = new Date;
+
+/** @type {UnifiedMessage} */
+var unifiedMessage={
+    lastChange:now,
+    lastSend:now,
+    cambios: {}
+}
 
 /**
  * 
@@ -58,12 +76,16 @@ function crearRectangulito(objectId, objectData){
     var rectangulito = document.createElement('div');
     refrescarRectangulito(objectData, rectangulito);
     rectangulito.className='rectangulito';
+    rectangulito.setAttribute('suave','si');
     central.appendChild(rectangulito);
     rectangulito.synchronizeInWebSocket=function(opts){
-        if(!opts?.skippeable){
-            var posicion = this.getBoundingClientRect();
-            objectData.posicion = posicion;
-            webSokect?.send(JSON.stringify({cambios:{[objectId]:objectData}}));
+        var posicion = this.getBoundingClientRect();
+        objectData.posicion = posicion;
+        unifiedMessage.lastChange = new Date();
+        unifiedMessage.cambios[objectId]=objectData;
+        if(!opts?.skippeable || unifiedMessage.lastChange.getTime() - unifiedMessage.lastSend.getTime() > DELTA_TIME_SEND ){
+            unifiedMessage.lastSend = unifiedMessage.lastChange;
+            webSokect.send(JSON.stringify(unifiedMessage))
         }
     }
     rectangulito.addEventListener('dblclick', function(event){
@@ -99,6 +121,7 @@ function crearRectangulito(objectId, objectData){
         zIndex++;
         this.style.cursor = "move";
         grabbeds.add(this)
+        this.setAttribute('suave','no')
         grabbeds.forEach(element=>{
             var posicion = element.getBoundingClientRect();
             element.lugarAgarreX = event.pageX - posicion.left;
@@ -116,14 +139,9 @@ function crearRectangulito(objectId, objectData){
         grabbeds.forEach(element=>{
             hasGrabbeds = true;
             element.synchronizeInWebSocket();
-            if(release){
-                element.style.cursor="";
-                element.movingWithTheMouse=false;
-                element.style.border=colorBordeNormal;
-            }
         });
         if(release){
-            grabbeds = new Set();
+            releaseGrabbeds();
         }
         tacho.style.visibility='hidden';
         if(!hasGrabbeds && event.target == central){

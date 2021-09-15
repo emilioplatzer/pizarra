@@ -11,6 +11,12 @@ declare interface ObjectData {
     rectangulito:Rectangulito
 }
 
+declare type UnifiedMessage = {
+    lastChange:Date
+    lastSend:Date
+    cambios:{[k in ObjectId]?:ObjectData}
+}
+
 declare type ObjectId = '111111.11111'|'111112.222222'|'etc...';
 
 declare interface HTMLDivElement{
