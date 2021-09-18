@@ -4,6 +4,7 @@
         "noImplicitAny": true,
         "checkJs": true,
         "lib": ["DOM", "ES2017"],
-        "typeRoots": ["../unlogged", "../node_modules/@types"],
-    }
+        "typeRoots": ["../node_modules/@types"],
+    },
+    "include": ["*.js", "./globals.d.ts", "../common/globals.d.ts"]
 }

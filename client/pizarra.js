@@ -133,46 +133,48 @@ function crearRectangulito(objectId, objectData){
         tacho.style.visibility='visible';
         tacho.style.zIndex = zIndex.toString();
     });
-    document.addEventListener('mouseup', function(event){
-        var release = !event.ctrlKey;
-        var hasGrabbeds = false;
-        grabbeds.forEach(element=>{
-            hasGrabbeds = true;
-            element.synchronizeInWebSocket();
-        });
-        if(release){
-            releaseGrabbeds();
-        }
-        tacho.style.visibility='hidden';
-        if(!hasGrabbeds && event.target == central){
-            /** @type {ObjectId} */ // @ts-ignore // ok, acá se crean con algún formato compatible
-            var objectId = new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
-            /** @type {ObjectData} */
-            var objectData = {
-                // @ts-ignore // faltan campos, ok
-                posicion:{
-                    top:event.pageY,
-                    left:event.pageX,
-                },
-                backgroundColor:'#AFA',
-                text:''
-            }
-            crearRectangulito(objectId, objectData)
-            var rectangulito = objectData.rectangulito;
-            rectangulito.contentEditable='true';
-            rectangulito.focus();
-        }
-    });
-    document.addEventListener('mousemove', function(event){
-        if( (event.buttons & 1) === 1 ){
-            grabbeds.forEach(element=>{
-                element.style.top  = event.pageY - element.lugarAgarreY +'px';
-                element.style.left = event.pageX - element.lugarAgarreX +'px';
-                element.synchronizeInWebSocket({skippeable:true});
-            });
-        }
-    });
 }
+
+document.addEventListener('mouseup', function(event){
+    var release = !event.ctrlKey;
+    var hasGrabbeds = false;
+    grabbeds.forEach(element=>{
+        hasGrabbeds = true;
+        element.synchronizeInWebSocket();
+    });
+    if(release){
+        releaseGrabbeds();
+    }
+    tacho.style.visibility='hidden';
+    if(!hasGrabbeds && event.target == central){
+        /** @type {ObjectId} */ // @ts-ignore // ok, acá se crean con algún formato compatible
+        var objectId = new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
+        /** @type {ObjectData} */
+        var objectData = {
+            // @ts-ignore // faltan campos, ok
+            posicion:{
+                top:event.pageY,
+                left:event.pageX,
+            },
+            backgroundColor:'#AFA',
+            text:''
+        }
+        crearRectangulito(objectId, objectData)
+        var rectangulito = objectData.rectangulito;
+        rectangulito.contentEditable='true';
+        rectangulito.focus();
+    }
+});
+
+document.addEventListener('mousemove', function(event){
+    if( (event.buttons & 1) === 1 ){
+        grabbeds.forEach(element=>{
+            element.style.top  = event.pageY - element.lugarAgarreY +'px';
+            element.style.left = event.pageX - element.lugarAgarreX +'px';
+            element.synchronizeInWebSocket({skippeable:true});
+        });
+    }
+});
 
 window.addEventListener('load', function(){
     var tacho = document.createElement('img');
@@ -232,13 +234,15 @@ ev=>{
             }
         }else{
             var rectangulito = actualData.rectangulito
-            if(!objectData){
-                rectangulito.parentNode?.removeChild(rectangulito);
-            }
-            if(JSON.stringify(objectData) != JSON.stringify(actualData)){
-                flashRectangulito(rectangulito, objectData)
-                refrescarRectangulito(objectData, rectangulito);
-                objects[objectId] = objectData;
+            if(!rectangulito || !grabbeds.has(rectangulito)){
+                if(!objectData){
+                    rectangulito.parentNode?.removeChild(rectangulito);
+                }
+                if(JSON.stringify(objectData) != JSON.stringify(actualData)){
+                    flashRectangulito(rectangulito, objectData)
+                    refrescarRectangulito(objectData, rectangulito);
+                    objects[objectId] = objectData;
+                }
             }
         }
     }

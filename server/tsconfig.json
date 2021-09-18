@@ -1,7 +1,10 @@
 {
     "compilerOptions": {
+        "strict": true,
+        "noImplicitAny": true,
         "checkJs": true,
         "lib": ["ES2017"],
-        "typeRoots": [".", "../node_modules/@types"],
-    }
+        "typeRoots": ["../client", "../node_modules/@types", "../node_modules/types.d.ts/modules"],
+    },
+    "include": ["*.js", "globals.d.ts", "../common/globals.d.ts"]
 }

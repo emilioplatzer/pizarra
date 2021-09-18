@@ -1,0 +1,2 @@
+
+declare function uno():void;
