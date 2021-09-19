@@ -160,13 +160,14 @@ function crearRectangulito(newObjectId, objectData){
     });
     rectangulito.addEventListener('mousedown', function(event){
         if(this.contentEditable=="true") return;
+        if(!event.ctrlKey && !grabbeds.has(this)) releaseGrabbeds()
         zIndex++;
         this.style.cursor = "move";
         grabbeds.add(this)
         this.setAttribute('suave','no')
         grabbeds.forEach(element=>{
-            element.lugarAgarreX = event.clientX - this.offsetLeft;
-            element.lugarAgarreY = event.clientY - this.offsetTop;
+            element.lugarAgarreX = event.clientX - element.offsetLeft;
+            element.lugarAgarreY = event.clientY - element.offsetTop;
             element.style.border='1px dotted red';
             element.style.zIndex = zIndex.toString();
             element.movingWithTheMouse=true;
@@ -207,9 +208,6 @@ document.addEventListener('mouseup', function(event){
         hasGrabbeds = true;
         element.synchronizeInWebSocket();
     });
-    if(release){
-        releaseGrabbeds();
-    }
     tacho.style.visibility='hidden';
     if(!hasGrabbeds && event.target == central){
         crearEditableRectangulito({top:event.pageY, left:event.pageX})
