@@ -35,8 +35,8 @@ central.addEventListener('mousedown', function(event){
  * @param {HTMLDivElement} rectangulito 
  */
 function refrescarRectangulito(objectData, rectangulito){
-    rectangulito.style.top=objectData.posicion.top+'px';
-    rectangulito.style.left=objectData.posicion.left+'px';
+    rectangulito.style.top=objectData.top+'px';
+    rectangulito.style.left=objectData.left+'px';
     rectangulito.style.backgroundColor=objectData.backgroundColor;
     rectangulito.textContent = objectData.text;
     if(zIndex<objectData.zIndex) zIndex = objectData.zIndex;
@@ -103,8 +103,8 @@ function crearRectangulito(newObjectId, objectData){
     rectangulito.synchronizeInWebSocket=function(opts){
         /** @type {ObjectData} objectData  */ // @ts-ignore  sé que el objectId existe
         var objectData = objects[objectId];
-        var posicion = this.getBoundingClientRect();
-        objectData.posicion = posicion;
+        objectData.left = this.offsetLeft
+        objectData.top = this.offsetTop
         objectData.zIndex = Number(rectangulito.style.zIndex);
         unifiedMessage.lastChange = new Date();
         unifiedMessage.cambios[objectId]=objectData;
@@ -165,9 +165,8 @@ function crearRectangulito(newObjectId, objectData){
         grabbeds.add(this)
         this.setAttribute('suave','no')
         grabbeds.forEach(element=>{
-            var posicion = element.getBoundingClientRect();
-            element.lugarAgarreX = event.pageX - posicion.left;
-            element.lugarAgarreY = event.pageY - posicion.top;
+            element.lugarAgarreX = event.clientX - this.offsetLeft;
+            element.lugarAgarreY = event.clientY - this.offsetTop;
             element.style.border='1px dotted red';
             element.style.zIndex = zIndex.toString();
             element.movingWithTheMouse=true;
@@ -186,10 +185,13 @@ function crearRectangulito(newObjectId, objectData){
 function crearEditableRectangulito({top,left}){
     /** @type {ObjectData} */
     var objectData = {
-        // @ts-ignore // faltan campos, ok
-        posicion:{top, left},
+        top, 
+        left,
         backgroundColor:'#AFA',
-        text:''
+        text:'',
+        zIndex,
+        // @ts-ignore, se llena abajo
+        rectangulito:null
     }
     crearRectangulito(null, objectData)
     var rectangulito = objectData.rectangulito;
@@ -217,8 +219,8 @@ document.addEventListener('mouseup', function(event){
 document.addEventListener('mousemove', function(event){
     if( (event.buttons & 1) === 1 ){
         grabbeds.forEach(element=>{
-            element.style.top  = event.pageY - element.lugarAgarreY +'px';
-            element.style.left = event.pageX - element.lugarAgarreX +'px';
+            element.style.top  = event.clientY - element.lugarAgarreY +'px';
+            element.style.left = event.clientX - element.lugarAgarreX +'px';
             if(SEND_MOVING) element.synchronizeInWebSocket({skippeable:true});
         });
     }
