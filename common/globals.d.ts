@@ -10,11 +10,12 @@ declare interface Posicion{
 declare interface ObjectData {
     text:string
     backgroundColor:string
+    zIndex:number
     posicion:Posicion
 }
 
 declare type UnifiedMessage = {
     lastChange:Date
     lastSend:Date
-    cambios:{[k in ObjectId]?:ObjectData}
+    cambios:{[k in ObjectId]?:ObjectData|null}
 }

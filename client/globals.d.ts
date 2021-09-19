@@ -6,6 +6,7 @@ declare interface ObjectData {
 
 declare interface HTMLDivElement{
     synchronizeInWebSocket:(opts?:{skippeable:boolean})=>void
+    eliminate:()=>void
     lugarAgarreX:number
     lugarAgarreY:number
     movingWithTheMouse:boolean

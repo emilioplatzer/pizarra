@@ -32,10 +32,8 @@ async function pizarra({server, app}){
         rootPath: './'
     }
     var path = '/ws'
-    /** @type {{[k in ObjectId]?:ObjectData}} */
-    var objects={
-
-    }
+    /** @type {{[k in ObjectId]?:ObjectData|null}} */
+    var objects={}
     app.use('/',serveContent(opts.rootPath+'client',{allowedExts:['jpg','png','html','gif','css','js']}));
     app.get('/',MiniTools.serveJade(opts.rootPath+'client/pizarra',false));
 
@@ -45,12 +43,10 @@ async function pizarra({server, app}){
     var allSockets={
     }
     function sendAll(){
-        console.log(objects)
         likeAr(allSockets).forEach((s,id)=>{
             console.log('sendAll',id,JSON.stringify(objects).substr(0,50)+'...')
             s.send(JSON.stringify(objects))
         })
-        console.log('........')
     }
     wsServer.on('connection', socket => {
         socketId++;
@@ -58,15 +54,14 @@ async function pizarra({server, app}){
             socket.on('message', message => {
                 /** @type {UnifiedMessage} */ // @ts-ignores
                 var data = JSON.parse(message);
-                console.log(data);
                 likeAr(data.cambios).forEach((v,k)=>{
-                    console.log('actualizando',k,v)
+                    console.log('actualizando',socketId,k,JSON.stringify(v))
                     objects[k] = v;
                 })
                 sendAll();
             });
             socket.on('close',_=>{
-                console.log('delete',socketId)
+                console.log('delete socket',socketId)
                 delete allSockets[socketId];
             })
             allSockets[socketId]=socket;

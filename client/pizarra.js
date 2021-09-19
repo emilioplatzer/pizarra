@@ -1,5 +1,9 @@
 const DELTA_TIME_SEND = 200;
 
+const SEND_MOVING = true;
+const ENTER_ABRE_OTRO = true;
+const TRIM_TEXT_ONBLUR = true;
+
 function resizeNow(){
     lateral.style.height = window.innerHeight - superior.clientHeight -2 + 'px';
     central.style.height = window.innerHeight - superior.clientHeight -2 + 'px';
@@ -18,10 +22,8 @@ var colorBordeNormal = '1px solid #9E9';
 
 var zIndex = 0;
 
-/** @type {{[k in ObjectId]?:ObjectData}} */
-var objects={
-
-}
+/** @type {{[k in ObjectId]?:ObjectData|null}} */
+var objects={}
 
 central.addEventListener('mousedown', function(event){
     if(event.target == this) releaseGrabbeds()
@@ -37,6 +39,8 @@ function refrescarRectangulito(objectData, rectangulito){
     rectangulito.style.left=objectData.posicion.left+'px';
     rectangulito.style.backgroundColor=objectData.backgroundColor;
     rectangulito.textContent = objectData.text;
+    if(zIndex<objectData.zIndex) zIndex = objectData.zIndex;
+    rectangulito.style.zIndex = objectData.zIndex?.toString();
     Object.defineProperty(objectData, 'rectangulito',{
         value: rectangulito, 
         enumerable: false,
@@ -45,14 +49,23 @@ function refrescarRectangulito(objectData, rectangulito){
 
 /** @type {Set<HTMLDivElement>} */
 var grabbeds = new Set()
-function releaseGrabbeds(){
+
+/** 
+ * @param {{deleting?:boolean}} [opts]
+ * */
+function releaseGrabbeds(opts){
     grabbeds.forEach(element=>{
-        element.setAttribute('suave','si')
-        element.style.cursor="";
-        element.movingWithTheMouse=false;
-        element.style.border=colorBordeNormal;
+        if(opts?.deleting){
+            element.eliminate();
+        }else{
+            element.setAttribute('suave','si')
+            element.style.cursor="";
+            element.movingWithTheMouse=false;
+            element.style.border=colorBordeNormal;
+        }
     });
     grabbeds = new Set();
+    if(opts?.deleting) sendPendingToServer()
 }
 
 var now = new Date;
@@ -64,13 +77,22 @@ var unifiedMessage={
     cambios: {}
 }
 
+function sendPendingToServer(){
+    if(unifiedMessage.lastChange.getTime() > unifiedMessage.lastSend.getTime()){
+        unifiedMessage.lastSend = unifiedMessage.lastChange;
+        websocket.send(JSON.stringify(unifiedMessage))
+    }
+}
+
 /**
  * 
- * @param {ObjectId} objectId 
+ * @param {ObjectId|null} newObjectId 
  * @param {ObjectData} objectData 
  */
 
-function crearRectangulito(objectId, objectData){
+function crearRectangulito(newObjectId, objectData){
+    /** @type {ObjectId} */ // @ts-ignore // ok, acá se crean con algún formato compatible
+    var objectId = newObjectId || new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
     objects[objectId] = objectData;
     /** @type {Rectangulito} */ // @ts-ignore
     var rectangulito = document.createElement('div');
@@ -79,39 +101,59 @@ function crearRectangulito(objectId, objectData){
     rectangulito.setAttribute('suave','si');
     central.appendChild(rectangulito);
     rectangulito.synchronizeInWebSocket=function(opts){
+        /** @type {ObjectData} objectData  */ // @ts-ignore  sé que el objectId existe
+        var objectData = objects[objectId];
         var posicion = this.getBoundingClientRect();
         objectData.posicion = posicion;
+        objectData.zIndex = Number(rectangulito.style.zIndex);
         unifiedMessage.lastChange = new Date();
         unifiedMessage.cambios[objectId]=objectData;
-        if(!opts?.skippeable || unifiedMessage.lastChange.getTime() - unifiedMessage.lastSend.getTime() > DELTA_TIME_SEND ){
-            unifiedMessage.lastSend = unifiedMessage.lastChange;
-            webSokect.send(JSON.stringify(unifiedMessage))
-        }
+        if(!opts?.skippeable) sendPendingToServer();
     }
     rectangulito.addEventListener('dblclick', function(event){
         this.contentEditable='true';
         rectangulito.style.border='1px dashed black';
         event.stopPropagation();
     });
-    rectangulito.addEventListener('keypress', function(event){
-        if(event.key === "Escape" || event.key === "Esc" || event.key === "Enter"){
+    rectangulito.addEventListener('keyup', function(event){
+        if(event.key === "Escape" || event.key === "Enter"){
+            if(TRIM_TEXT_ONBLUR){
+                // @ts-ignore hay rectangulito si estamos acá!
+                this.textContent = this.textContent?.trim()
+            }
             this.blur();
             event.stopPropagation();
+            if(this.textContent && event.key === "Enter" && ENTER_ABRE_OTRO){
+                var top = this.offsetTop + this.offsetHeight;
+                var left = this.offsetLeft;
+                if(top > document.body.offsetHeight - this.offsetHeight - 10){
+                    top = 32;
+                    left += this.offsetWidth;
+                    if(left > document.body.offsetWidth - 64 ) left = 32;
+                }
+                crearEditableRectangulito({top, left})
+            }
         }
     });
     /*
     rectangulito.addEventListener('click', function(event){
         event.stopPropagation();
     });
-    */
+     */
+    rectangulito.eliminate=function(){
+        unifiedMessage.lastChange = new Date();
+        unifiedMessage.cambios[objectId]=null;
+        delete objects[objectId];
+        // delete objects[objectId];
+        rectangulito.parentNode?.removeChild(rectangulito);
+    }
     rectangulito.addEventListener('blur', function(event){
         this.contentEditable='false';
         this.style.border=colorBordeNormal;
         objectData.text = this.innerText;
         if(this.innerText.trim()==''){
-            webSokect?.send(JSON.stringify({cambios:{[objectId]:null}}));
-            delete objects[objectId];
-            rectangulito.parentNode?.removeChild(rectangulito);
+            this.eliminate();
+            sendPendingToServer();
         }else{
             this.synchronizeInWebSocket();
         }
@@ -131,8 +173,29 @@ function crearRectangulito(objectId, objectData){
             element.movingWithTheMouse=true;
         })
         tacho.style.visibility='visible';
-        tacho.style.zIndex = zIndex.toString();
+        tacho.style.zIndex = (zIndex+1).toString();
     });
+}
+
+/**
+ * 
+ * @param {{top:number, left:number}} param0 
+ * @returns 
+ */
+
+function crearEditableRectangulito({top,left}){
+    /** @type {ObjectData} */
+    var objectData = {
+        // @ts-ignore // faltan campos, ok
+        posicion:{top, left},
+        backgroundColor:'#AFA',
+        text:''
+    }
+    crearRectangulito(null, objectData)
+    var rectangulito = objectData.rectangulito;
+    rectangulito.contentEditable='true';
+    rectangulito.focus();
+    return rectangulito;   
 }
 
 document.addEventListener('mouseup', function(event){
@@ -147,22 +210,7 @@ document.addEventListener('mouseup', function(event){
     }
     tacho.style.visibility='hidden';
     if(!hasGrabbeds && event.target == central){
-        /** @type {ObjectId} */ // @ts-ignore // ok, acá se crean con algún formato compatible
-        var objectId = new Date().toJSON().replace(/\D/g,'') + Math.random().toString().substr(1);
-        /** @type {ObjectData} */
-        var objectData = {
-            // @ts-ignore // faltan campos, ok
-            posicion:{
-                top:event.pageY,
-                left:event.pageX,
-            },
-            backgroundColor:'#AFA',
-            text:''
-        }
-        crearRectangulito(objectId, objectData)
-        var rectangulito = objectData.rectangulito;
-        rectangulito.contentEditable='true';
-        rectangulito.focus();
+        crearEditableRectangulito({top:event.pageY, left:event.pageX})
     }
 });
 
@@ -171,7 +219,7 @@ document.addEventListener('mousemove', function(event){
         grabbeds.forEach(element=>{
             element.style.top  = event.pageY - element.lugarAgarreY +'px';
             element.style.left = event.pageX - element.lugarAgarreX +'px';
-            element.synchronizeInWebSocket({skippeable:true});
+            if(SEND_MOVING) element.synchronizeInWebSocket({skippeable:true});
         });
     }
 });
@@ -184,20 +232,24 @@ window.addEventListener('load', function(){
     tacho.style.position='absolute'; 
     tacho.id='tacho';
     central.appendChild(tacho);
-    tacho.style.top=window.innerHeight - tacho.clientHeight + 'px';
-    tacho.style.left=window.innerWidth - tacho.clientWidth + 'px';
+    sizeAdapt();
     tacho.style.visibility='hidden';
+    tacho.addEventListener('mouseup', function(){
+        releaseGrabbeds({deleting:true});
+    })
 });
 
-window.addEventListener('resize', function(){
-    tacho.style.top=window.innerHeight - tacho.clientHeight + 'px';
-    tacho.style.left=window.innerWidth - tacho.clientWidth + 'px';
-});
+function sizeAdapt(){
+    tacho.style.top=window.innerHeight - tacho.clientHeight - 20 + 'px';
+    tacho.style.left=window.innerWidth - tacho.clientWidth - 20 + 'px';
+}
+
+window.addEventListener('resize', sizeAdapt);
 
 // @ts-ignore REVISAR!!!
 var url = new URL('/ws', location)
 url.protocol = url.protocol.replace('http','ws');
-var webSokect = new WebSocket(url.toString())
+var websocket = new WebSocket(url.toString())
 
 /**
  * @param {Rectangulito} rectangulito
@@ -206,27 +258,29 @@ var webSokect = new WebSocket(url.toString())
 
 function flashRectangulito(rectangulito, objectData){
     rectangulito.style.backgroundColor='#FF8';
-    rectangulito.setAttribute('suave','si')
     rectangulito.style.backgroundColor=objectData.backgroundColor;
-    setTimeout(()=>{
-        rectangulito.removeAttribute('suave');
-    },1000)
 }
 
-webSokect.onmessage = 
+websocket.addEventListener('open', () => {
+    setInterval(_=>{
+        sendPendingToServer()
+    },100)
+});
+
+websocket.onmessage = 
 /**
  * @param {MessageEvent<any>} ev 
  */
 ev=>{
     var data = JSON.parse(ev.data);
-    // webSokect.on('message', message=>{
+    // websocket.on('message', message=>{
     //    var data = JSON.parse(ev.data);
     //    var data = JSON.parse(message);
     for(var key in data){
         /** @type {ObjectId} */ // @ts-ignore por ahora no sabe el tipo de for
         var objectId = key;
         var objectData = data[objectId];
-        /** @type {ObjectData|undefined} */
+        /** @type {ObjectData|undefined|null} */
         var actualData = objects[objectId]
         if(actualData == null){
             if(objectData){
@@ -237,8 +291,7 @@ ev=>{
             if(!rectangulito || !grabbeds.has(rectangulito)){
                 if(!objectData){
                     rectangulito.parentNode?.removeChild(rectangulito);
-                }
-                if(JSON.stringify(objectData) != JSON.stringify(actualData)){
+                }else if(JSON.stringify(objectData) != JSON.stringify(actualData)){
                     flashRectangulito(rectangulito, objectData)
                     refrescarRectangulito(objectData, rectangulito);
                     objects[objectId] = objectData;
