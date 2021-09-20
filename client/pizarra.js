@@ -9,7 +9,41 @@ function resizeNow(){
     central.style.height = window.innerHeight - superior.clientHeight -2 + 'px';
 }
 
+function sendAllPending(){
+    unifiedMessage.lastSend = unifiedMessage.lastChange;
+    websocket.send(JSON.stringify(unifiedMessage))
+    unifiedMessage.cambios={}
+}
+
+function sendIdAndToken(){
+    if(unifiedMessage.pizarraId && unifiedMessage.pizarraToken){
+        sendAllPending();
+    }
+}
+
 window.addEventListener('load', function(){
+    if(!pizarraIdInput.value){
+        pizarraIdInput.value = localStorage['pizarraId']||''
+        pizarraIdInput.onblur = _ =>{
+            // @ts-ignore
+            unifiedMessage.pizarraId = pizarraIdInput.value
+            localStorage['pizarraId'] = pizarraIdInput.value
+            sendIdAndToken()
+        }
+    }
+    // @ts-ignore
+    unifiedMessage.pizarraId = pizarraIdInput.value
+    if(!pizarraTokenInput.value){
+        pizarraTokenInput.value = localStorage['pizarraToken']||''
+        pizarraTokenInput.onblur = _ =>{
+            // @ts-ignore
+            unifiedMessage.pizarraToken = pizarraTokenInput.value
+            localStorage['pizarraToken'] = pizarraTokenInput.value
+            sendIdAndToken()
+        }
+    }
+    // @ts-ignore
+    unifiedMessage.pizarraToken = pizarraTokenInput.value
     resizeNow();
 });
 
@@ -72,6 +106,7 @@ var now = new Date;
 
 /** @type {UnifiedMessage} */
 var unifiedMessage={
+    pizarraId:"publica",
     lastChange:now,
     lastSend:now,
     cambios: {}
@@ -79,8 +114,7 @@ var unifiedMessage={
 
 function sendPendingToServer(){
     if(unifiedMessage.lastChange.getTime() > unifiedMessage.lastSend.getTime()){
-        unifiedMessage.lastSend = unifiedMessage.lastChange;
-        websocket.send(JSON.stringify(unifiedMessage))
+        sendAllPending();
     }
 }
 
@@ -201,8 +235,14 @@ function crearEditableRectangulito({top,left}){
     return rectangulito;   
 }
 
+var mouseHandling = false;
+
 document.addEventListener('mouseup', function(event){
     var release = !event.ctrlKey;
+    if(release){
+        mouseHandling = false;
+        document.body.setAttribute('mouse-handling','false')
+    }
     var hasGrabbeds = false;
     grabbeds.forEach(element=>{
         hasGrabbeds = true;
@@ -216,6 +256,8 @@ document.addEventListener('mouseup', function(event){
 
 document.addEventListener('mousemove', function(event){
     if( (event.buttons & 1) === 1 ){
+        mouseHandling = true;
+        document.body.setAttribute('mouse-handling','true')
         grabbeds.forEach(element=>{
             element.style.top  = event.clientY - element.lugarAgarreY +'px';
             element.style.left = event.clientX - element.lugarAgarreX +'px';
@@ -262,6 +304,7 @@ function flashRectangulito(rectangulito, objectData){
 }
 
 websocket.addEventListener('open', () => {
+    sendIdAndToken()
     setInterval(_=>{
         sendPendingToServer()
     },100)
@@ -288,7 +331,7 @@ ev=>{
             }
         }else{
             var rectangulito = actualData.rectangulito
-            if(!rectangulito || !grabbeds.has(rectangulito)){
+            if(!rectangulito || !grabbeds.has(rectangulito) || !mouseHandling){
                 if(!objectData){
                     rectangulito.parentNode?.removeChild(rectangulito);
                 }else if(JSON.stringify(objectData) != JSON.stringify(actualData)){

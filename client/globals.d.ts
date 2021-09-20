@@ -15,5 +15,9 @@ declare var superior: HTMLDivElement
 declare var central: HTMLDivElement
 declare var lateral: HTMLDivElement
 declare var tacho: HTMLDivElement
+
+declare var pizarraIdInput: HTMLInputElement
+declare var pizarraTokenInput: HTMLInputElement
+
 declare interface Rectangulito extends HTMLDivElement{
 }
