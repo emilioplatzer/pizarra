@@ -250,7 +250,7 @@ document.addEventListener('mouseup', function(event){
     });
     tacho.style.visibility='hidden';
     if(!hasGrabbeds && event.target == central){
-        crearEditableRectangulito({top:event.pageY, left:event.pageX})
+        crearEditableRectangulito({top:event.clientY-(event.target?.offsetTop||0)-36, left:event.clientX-(event.target?.offsetLeft||0)})
     }
 });
 
